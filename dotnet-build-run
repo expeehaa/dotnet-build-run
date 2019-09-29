@@ -1,34 +1,8 @@
 #!/bin/bash
 
-# Configure the script here. Ideally, you don’t have to change anything below the configuration section.
-
-# The name of your application. This is only used for echo messages.
-name=
-repourl=
-branch=master
-# The dotnet-sdk executable which should be used to build and run the application.
-dotnet=dotnet
-# Root path of the script.
-root=$(pwd)
-# Name of the repository directory in $tempdir.
-sourcedir="source"
-# Name of the build directory.
-builddir="build"
-# Name of the directory where the previous build gets backed up before a new one is created.
-oldbuilddir="${builddir}_old"
-# Name of the working directory for application runs.
-rundir=
-# Name of the executable in $builddir.
-executable=
-
-# If you need to copy files between two builds, do this here.
-# When called, the working directory will be $root
 copy_files(){
-
+	echo
 }
-
-
-# Here the actual script starts. Just a warning to stay away from here if you do not know what you do.
 
 check_programs(){
 	if hash git 1>/dev/null 2>&1; then
@@ -96,24 +70,33 @@ run_bot(){
 	$dotnet "$root/$builddir/$executable" || exit 1
 }
 
-check_programs
 
-case $1 in
-	-h|--help)
-		echo <<HELP
---help  -h # Show this help
---build -b # Force build on start
+force_build=false
+config_file="build-run.cfg"
+
+for var in "$@"; do
+	case $1 in
+		-h|--help)
+			echo <<HELP
+	--help  -h # Show this help
+	--build -b # Force build on start
 HELP
-		exit 0
-		;;
-	-b|--build)
-		fetch_build_copy --build
-		;;
-	*)
-		;;
-esac
+			exit 0
+			;;
+		-b|--build)
+			force_build=true
+			;;
+		*)
+			config_file="$var"
+			;;
+	esac
+done
 
-[ ! -d "$root/$builddir" ] && fetch_build_copy
+. "$config_file"
+
+if [ "$force_build" = true ] || [ ! -d "$root/$builddir" ]; then
+	fetch_build_copy --build
+fi
 
 while :; do
 	run_bot && fetch_build_copy || exit 1
