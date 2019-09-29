@@ -26,13 +26,13 @@ fetch_build_copy(){
 	perform_build=true
 	if [ ! -d "$sourcedir/.git" ]; then
 		echo "Downloading $name."
-		git clone -b "$branch" --recursive --depth 1 "$repourl" "$sourcedir" || exit 1
+		git clone -b "$branch" --recursive "$repourl" "$sourcedir" || exit 1
 		cd "$sourcedir"
 	else
 		echo "Updating $name."
 		cd "$sourcedir"
 		old_hash=$(git rev-parse HEAD)
-		if git pull --recurse-submodules --depth 1 origin "$branch" && git checkout "$branch"; then
+		if git pull --recurse-submodules origin "$branch" && git checkout "$branch"; then
 			new_hash=$(git rev-parse HEAD)
 			
 			[ "$old_hash" = "$new_hash" ] && perform_build=false
@@ -40,7 +40,7 @@ fetch_build_copy(){
 			echo "Error while pulling changes, trying completely new clone."
 			cd "$root"
 			rm -rf "$sourcedir" 1>/dev/null 2>&1
-			git clone -b "$branch" --recursive --depth 1 "$repourl" "$sourcedir" || exit 1
+			git clone -b "$branch" --recursive "$repourl" "$sourcedir" || exit 1
 			cd "$sourcedir"
 		fi
 	fi
