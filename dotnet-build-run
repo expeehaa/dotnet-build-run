@@ -77,14 +77,49 @@ config_file="build-run.cfg"
 for var in "$@"; do
 	case $1 in
 		-h|--help)
-			echo <<HELP
-	--help  -h # Show this help
-	--build -b # Force build on start
+			cat <<HELP
+Usage: $(basename $0) [-h|-b] [configfile]
+
+  -h, --help                    # Show this help.
+  -b, --build                   # Force build on start.
+      --create-sample-config    # Create a sample configuration file.
 HELP
 			exit 0
 			;;
 		-b|--build)
 			force_build=true
+			;;
+		--create-sample-config)
+			cat > build-run-sample.cfg <<SAMPLE_CONFIG
+#!/bin/bash
+# This is a sample configuration for the dotnet-build-run script.
+
+# The name of your application. This is only used for echo messages.
+name="Sample"
+repourl="sample.git"
+branch=master
+# The dotnet-sdk executable which should be used to build and run the application.
+dotnet=dotnet
+# Root path of the script.
+root="sample/root"
+# Name of the repository directory in \$tempdir.
+sourcedir="source"
+# Name of the build directory.
+builddir="build"
+# Name of the directory where the previous build gets backed up before a new one is created.
+oldbuilddir="\${builddir}_old"
+# Name of the working directory for application runs.
+rundir="run"
+# Name of the executable in \$builddir.
+executable="Sample.dll"
+
+# If you need to copy files between two builds, do this here.
+# When called, the working directory will be \$root
+copy_files(){
+	echo
+}
+SAMPLE_CONFIG
+			exit 0
 			;;
 		*)
 			config_file="$var"
