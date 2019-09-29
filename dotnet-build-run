@@ -32,11 +32,17 @@ fetch_build_copy(){
 		echo "Updating $name."
 		cd "$sourcedir"
 		old_hash=$(git rev-parse HEAD)
-		git pull --recurse-submodules --depth 1
-		git checkout "$branch"
-		new_hash=$(git rev-parse HEAD)
-
-		[ "$old_hash" = "$new_hash" ] && perform_build=false
+		if git pull --recurse-submodules --depth 1 && git checkout "$branch"; then
+			new_hash=$(git rev-parse HEAD)
+			
+			[ "$old_hash" = "$new_hash" ] && perform_build=false
+		else
+			echo "Error while pulling changes, trying completely new clone."
+			cd "$root"
+			rm -rf "$sourcedir" 1>/dev/null 2>&1
+			git clone -b "$branch" --recursive --depth 1 "$repourl" "$sourcedir" || exit 1
+			cd "$sourcedir"
+		fi
 	fi
 	
 	if [ "$1" = "--build" ] || [ "$perform_build" = true ] || [ ! -d "$root/$builddir" ]; then
