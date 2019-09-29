@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# Configure the script here. Ideally, you don’t have to change anything below the configuration section.
+
+# The name of your application. This is only used for echo messages.
+name=
+repourl=
+branch=master
+# The dotnet-sdk executable which should be used to build and run the application.
+dotnet=dotnet
+# Root path of the script.
+root=$(pwd)
+# Name of the repository directory in $tempdir.
+sourcedir="source"
+# Name of the build directory.
+builddir="build"
+# Name of the directory where the previous build gets backed up before a new one is created.
+oldbuilddir="${builddir}_old"
+# Name of the working directory for application runs.
+rundir=
+# Name of the executable in $builddir.
+executable=
+
+# If you need to copy files between two builds, do this here.
+# When called, the working directory will be $root
+copy_files(){
+
+}
+
+
+# Here the actual script starts. Just a warning to stay away from here if you do not know what you do.
+
+check_programs(){
+	if hash git 1>/dev/null 2>&1; then
+		echo "Git installed."
+	else
+		echo "Git is not installed. Please install Git."
+		exit 1
+	fi
+	
+	if hash "$dotnet" 1>/dev/null 2>&1; then
+		echo "Dotnet installed."
+	else
+		echo "Dotnet at \"$dotnet\" is not installed. Please check this scripts settings."
+		exit 1
+	fi
+}
+
+fetch_build_copy(){
+	cd "$root"
+	
+	perform_build=true
+	if [ ! -d "$sourcedir/.git" ]; then
+		echo "Downloading $name."
+		git clone -b "$branch" --recursive --depth 1 "$repourl" "$sourcedir" || exit 1
+		cd "$sourcedir"
+	else
+		echo "Updating $name."
+		cd "$sourcedir"
+		old_hash=$(git rev-parse HEAD)
+		git pull
+		new_hash=$(git rev-parse HEAD)
+
+		[ "$old_hash" = "$new_hash" ] && perform_build=false
+	fi
+	
+	if [ "$1" = "--build" ] || [ "$perform_build" = true ] || [ ! -d "$root/$builddir" ]; then
+		echo -e "\nRestoring dependencies."
+		$dotnet restore || exit 1
+		
+		copy_old_files=false
+		if [ -d "$root/$builddir" ]; then
+			copy_old_files=true
+			echo -e "\nBacking up the current $name build."
+			
+			cd "$root"
+			rm -rf "$oldbuilddir" 1>/dev/null 2>&1
+			mv -fT "$builddir" "$oldbuilddir" 1>/dev/null 2>&1
+
+			cd "$sourcedir"
+		fi
+		
+		echo -e "\nBuilding new $name."
+		$dotnet build --configuration Release -o "$root/$builddir" || exit 1
+		
+		cd "$root"
+		
+		[ "$copy_old_files" = true ] && copy_files
+	else
+		echo "Not performing build, nothing changed."
+	fi
+}
+
+run_bot(){
+	cd "$root/$rundir"
+	$dotnet "$root/$builddir/$executable" || exit 1
+}
+
+check_programs
+
+case $1 in
+	-h|--help)
+		echo <<HELP
+--help  -h # Show this help
+--build -b # Force build on start
+HELP
+		exit 0
+		;;
+	-b|--build)
+		fetch_build_copy --build
+		;;
+	*)
+		;;
+esac
+
+[ ! -d "$root/$builddir" ] && fetch_build_copy
+
+while :; do
+	run_bot && fetch_build_copy || exit 1
+done
