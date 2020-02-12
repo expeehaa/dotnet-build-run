@@ -62,7 +62,7 @@ fetch_build_copy(){
 		fi
 		
 		echo -e "\nBuilding new $name."
-		$dotnet build --configuration Release -o "$root/$builddir" || { [ "$copy_old_files" = true ] && copy_files && exit 1 }
+		$dotnet build --configuration Release -o "$root/$builddir" || { [ "$copy_old_files" = true ] && copy_files; exit 1; }
 		
 		cd "$root"
 		
