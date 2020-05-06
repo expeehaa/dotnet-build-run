@@ -32,7 +32,7 @@ fetch_build_copy(){
 		echo "Updating $name."
 		cd "$sourcedir"
 		old_hash=$(git rev-parse HEAD)
-		if git pull -X theirs --recurse-submodules origin "$branch" && git checkout "$branch"; then
+		if git fetch --recurse-submodules origin "$branch" && git checkout "origin/$branch"; then
 			new_hash=$(git rev-parse HEAD)
 			
 			[ "$old_hash" = "$new_hash" ] && perform_build=false
