@@ -31,7 +31,7 @@ update_docker_container(){
 }
 
 run_docker_container(){
-	docker run -v "${datadir}:/data" -it "${name}" dotnet "/build/${executable}" || exit 1
+	docker run -v "${datadir}:/data" "${docker_run_args}" -it "${name}" dotnet "/build/${executable}" || exit 1
 }
 
 
@@ -70,6 +70,8 @@ sourcedir="source"
 datadir="data"
 # Name of the executable.
 executable="Sample.dll"
+# Additional arguments to "docker run".
+docker_run_args=""
 SAMPLE_CONFIG
 			exit 0
 			;;
