@@ -1,0 +1,95 @@
+#!/bin/bash
+
+check_programs(){
+	if hash git 1>/dev/null 2>&1; then
+		echo "Git installed."
+	else
+		echo "Git is not installed. Please install Git."
+		exit 1
+	fi
+}
+
+update_docker_container(){
+	cd "${root}"
+	
+	if [ ! -d "${sourcedir}/.git" ]; then
+		git clone -b "${branch}" --recursive "${repourl}" "${sourcedir}" || exit 1
+	else
+		cd "${sourcedir}"
+		
+		if ! { git fetch --recurse-submodules origin "${branch}" && git checkout "origin/${branch}" && git submodule update }; then
+			echo "Error while pulling changes. Performing a new clone..."
+			cd "${root}"
+			rm -rf "${sourcedir}"
+			git clone -b "${branch}" --recursive "${repourl}" "${sourcedir}" || exit 1
+		fi
+	fi
+	
+	cd "${sourcedir}"
+	
+	docker build -t "${name}" -f Dockerfile .
+}
+
+run_docker_container(){
+	docker run -v "${datadir}:/data" -it "${name}" dotnet "/build/${executable}" || exit 1
+}
+
+
+declare force_build=false
+declare config_file="build-run-docker.cfg"
+
+for var in "$@"; do
+	case "$1" in
+		-h|--help)
+			cat <<HELP
+Usage: $(basename $0) [-h|-b] [configfile]
+
+  -h, --help                    # Show this help.
+  -b, --build                   # Force build on start.
+      --create-sample-config    # Create a sample configuration file.
+HELP
+			exit 0
+			;;
+		-b|--build)
+			force_build=true
+			;;
+		--create-sample-config)
+			cat > build-run-docker-sample.cfg <<SAMPLE_CONFIG
+#!/bin/bash
+# This is a sample configuration for the dotnet-build-run-docker script.
+
+# The name of your application.
+name="Sample"
+repourl="sample.git"
+branch="master"
+# Root path of the script.
+root="$(pwd)"
+# Name of the repository directory in \$rootdir.
+sourcedir="source"
+# Name of the directory containing shared data (configurations, ...).
+datadir="data"
+# Name of the executable.
+executable="Sample.dll"
+SAMPLE_CONFIG
+			exit 0
+			;;
+		*)
+			config_file="${var}"
+			;;
+	esac
+done
+
+if [[ -f "${config_file}" ]]; then
+	. "$config_file"
+else
+	echo "Config file at \"${config_file}\" does not exist."
+	exit 1
+fi
+
+if [[ "${force_build}" == "true" ]]; then
+	update_docker_container
+fi
+
+while :; do
+	run_docker_container && update_docker_container || exit 1
+done
