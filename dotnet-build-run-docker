@@ -65,9 +65,9 @@ branch="master"
 # Root path of the script.
 root="$(pwd)"
 # Name of the repository directory in \$rootdir.
-sourcedir="source"
+sourcedir="\$\{root\}/source"
 # Name of the directory containing shared data (configurations, ...).
-datadir="data"
+datadir="\$\{root\}/data"
 # Name of the executable.
 executable="Sample.dll"
 # Additional arguments to "docker run".
