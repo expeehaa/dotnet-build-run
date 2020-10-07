@@ -17,7 +17,7 @@ update_docker_container(){
 	else
 		cd "${sourcedir}"
 		
-		if ! { git fetch --recurse-submodules origin "${branch}" && git checkout "origin/${branch}" && git submodule update }; then
+		if ! { git fetch --recurse-submodules origin "${branch}" && git checkout "origin/${branch}" && git submodule update; }; then
 			echo "Error while pulling changes. Performing a new clone..."
 			cd "${root}"
 			rm -rf "${sourcedir}"
