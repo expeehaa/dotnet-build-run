@@ -31,7 +31,7 @@ update_docker_container(){
 }
 
 run_docker_container(){
-	docker run -v "${datadir}:/data" "${docker_run_args}" -it --rm "${name}" dotnet "/build/${executable}" || exit 1
+	docker run -v "${datadir}:/data" ${docker_run_args} -it --rm "${name}" dotnet "/build/${executable}" || exit 1
 }
 
 
