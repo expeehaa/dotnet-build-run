@@ -88,7 +88,7 @@ else
 	exit 1
 fi
 
-if [[ "${force_build}" == "true" ]]; then
+if [[ "${force_build}" == "true" ]] || [[ -z "$(docker images -q ${name} 2>/dev/null)" ]]; then
 	update_docker_container
 fi
 
